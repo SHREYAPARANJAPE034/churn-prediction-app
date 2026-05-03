@@ -10,20 +10,27 @@ import matplotlib.pyplot as plt
 
 # ----------------------------
 
+# ----------------------------
+
+# Load Model & Encoders
+
+# ----------------------------
+
 try:
-with open("models/model.pkl", "rb") as f:
-model = pickle.load(f)
+ with open("models/model.pkl", "rb") as f:
+ model = pickle.load(f)
 
 ```
-with open("models/encoders.pkl", "rb") as f:
+  with open("models/encoders.pkl", "rb") as f:
     encoders = pickle.load(f)
 
-st.success("Model loaded successfully ✅")
+  st.success("Model loaded successfully ✅")
 ```
 
 except Exception as e:
 st.error(f"Error loading model: {e}")
 st.stop()
+
 
 # ----------------------------
 
