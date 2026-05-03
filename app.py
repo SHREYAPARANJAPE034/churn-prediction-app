@@ -130,14 +130,11 @@ if st.button("🔍 Predict Churn", use_container_width=True) and is_valid:
 explainer = shap.Explainer(model)
 
 # Get SHAP values
-shap_values = explainer(df_input)
+st.subheader("🔍 Why this prediction? (SHAP Explainability)")
 
-# Create waterfall plot
+explainer = shap.Explainer(model)
+shap_values = explainer(input_data)
+
 fig, ax = plt.subplots()
-
-shap.plots.waterfall(
-    shap_values[0],
-    show=False
-)
-
+shap.plots.waterfall(shap_values[0], show=False)
 st.pyplot(fig)
