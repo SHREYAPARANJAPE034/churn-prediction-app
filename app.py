@@ -73,7 +73,7 @@ TotalCharges = st.number_input("Total Charges", min_value=0.0)
 if st.button("Predict"):
 
 
-input_data = pd.DataFrame([{
+ input_data = pd.DataFrame([{
     "gender": gender,
     "SeniorCitizen": SeniorCitizen,
     "Partner": Partner,
