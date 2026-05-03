@@ -10,27 +10,20 @@ import matplotlib.pyplot as plt
 
 # ----------------------------
 
-# ----------------------------
-
-# Load Model & Encoders
-
-# ----------------------------
-
 try:
- with open("models/model.pkl", "rb") as f:
- model = pickle.load(f)
+with open("models/model.pkl", "rb") as f:
+model = pickle.load(f)
 
 ```
-  with open("models/encoders.pkl", "rb") as f:
+with open("models/encoders.pkl", "rb") as f:
     encoders = pickle.load(f)
 
-  st.success("Model loaded successfully ✅")
+st.success("Model loaded successfully ✅")
 ```
 
 except Exception as e:
 st.error(f"Error loading model: {e}")
 st.stop()
-
 
 # ----------------------------
 
@@ -67,26 +60,28 @@ StreamingMovies = st.selectbox("Streaming Movies", ["Yes", "No", "No internet se
 
 Contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
 PaperlessBilling = st.selectbox("Paperless Billing", ["Yes", "No"])
-PaymentMethod = st.selectbox("Payment Method", [
+PaymentMethod = st.selectbox(
+"Payment Method",
+[
 "Electronic check",
 "Mailed check",
 "Bank transfer (automatic)",
 "Credit card (automatic)"
-])
+]
+)
 
 MonthlyCharges = st.number_input("Monthly Charges", min_value=0.0)
 TotalCharges = st.number_input("Total Charges", min_value=0.0)
 
 # ----------------------------
 
-# Predict Button
+# Prediction
 
 # ----------------------------
 
 if st.button("Predict"):
 
 ```
-# Create input dataframe
 input_data = pd.DataFrame([{
     "gender": gender,
     "SeniorCitizen": SeniorCitizen,
@@ -109,7 +104,7 @@ input_data = pd.DataFrame([{
     "TotalCharges": TotalCharges
 }])
 
-# Encode categorical features
+# Encode categorical columns
 try:
     for col in encoders:
         input_data[col] = encoders[col].transform(input_data[col])
@@ -117,9 +112,7 @@ except Exception as e:
     st.error(f"Encoding error: {e}")
     st.stop()
 
-# ----------------------------
-# Prediction
-# ----------------------------
+# Make prediction
 prediction = model.predict(input_data)[0]
 probability = model.predict_proba(input_data)[0][1]
 
@@ -145,4 +138,4 @@ try:
 
 except Exception as e:
     st.warning(f"SHAP could not be generated: {e}")
-
+```
