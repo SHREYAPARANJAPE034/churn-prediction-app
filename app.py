@@ -10,20 +10,11 @@ import matplotlib.pyplot as plt
 
 # ----------------------------
 
-try:
 with open("models/model.pkl", "rb") as f:
 model = pickle.load(f)
 
-```
 with open("models/encoders.pkl", "rb") as f:
-    encoders = pickle.load(f)
-
-st.success("Model loaded successfully ✅")
-```
-
-except Exception as e:
-st.error(f"Error loading model: {e}")
-st.stop()
+encoders = pickle.load(f)
 
 # ----------------------------
 
@@ -81,7 +72,7 @@ TotalCharges = st.number_input("Total Charges", min_value=0.0)
 
 if st.button("Predict"):
 
-```
+
 input_data = pd.DataFrame([{
     "gender": gender,
     "SeniorCitizen": SeniorCitizen,
@@ -105,14 +96,10 @@ input_data = pd.DataFrame([{
 }])
 
 # Encode categorical columns
-try:
-    for col in encoders:
-        input_data[col] = encoders[col].transform(input_data[col])
-except Exception as e:
-    st.error(f"Encoding error: {e}")
-    st.stop()
+for col in encoders:
+    input_data[col] = encoders[col].transform(input_data[col])
 
-# Make prediction
+# Prediction
 prediction = model.predict(input_data)[0]
 probability = model.predict_proba(input_data)[0][1]
 
@@ -128,14 +115,9 @@ else:
 # ----------------------------
 st.subheader("🔍 Why this prediction? (SHAP Explainability)")
 
-try:
-    explainer = shap.Explainer(model)
-    shap_values = explainer(input_data)
+explainer = shap.Explainer(model)
+shap_values = explainer(input_data)
 
-    fig, ax = plt.subplots()
-    shap.plots.waterfall(shap_values[0], show=False)
-    st.pyplot(fig)
-
-except Exception as e:
-    st.warning(f"SHAP could not be generated: {e}")
-```
+fig, ax = plt.subplots()
+shap.plots.waterfall(shap_values[0], show=False)
+st.pyplot(fig)
