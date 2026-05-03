@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 # ----------------------------
 
 with open("models/model.pkl", "rb") as f:
-model = pickle.load(f)
+ model = pickle.load(f)
 
 with open("models/encoders.pkl", "rb") as f:
-encoders = pickle.load(f)
+ encoders = pickle.load(f)
 
 # ----------------------------
 
