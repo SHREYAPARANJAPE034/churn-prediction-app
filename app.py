@@ -126,21 +126,25 @@ if st.button("🔍 Predict Churn", use_container_width=True) and is_valid:
     # ---------------- SHAP ----------------
     # ---------------- SHAP ----------------
     # ---------------- SHAP ----------------
+# ---------------- SHAP ----------------
 st.subheader("🔍 Why this prediction? (SHAP Explainability)")
 
-fig, ax = plt.subplots()
+if 'shap_values' in locals():
 
-shap_exp = shap.Explanation(
-    values=shap_values[0],              # SHAP values
-    base_values=explainer.expected_value,
-    data=df_input.iloc[0],
-    feature_names=df_input.columns.tolist()
-)
+    fig, ax = plt.subplots()
 
-shap.plots.waterfall(shap_exp, show=False)
+    shap_exp = shap.Explanation(
+        values=shap_values[0],
+        base_values=explainer.expected_value,
+        data=df_input.iloc[0],
+        feature_names=df_input.columns.tolist()
+    )
 
-st.pyplot(fig)
+    shap.plots.waterfall(shap_exp, show=False)
+    st.pyplot(fig)
 
+else:
+    st.info("👆 Click 'Predict Churn' to see explanation")
     
 
     
