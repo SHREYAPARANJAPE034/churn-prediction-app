@@ -1,123 +1,151 @@
 import streamlit as st
 import pandas as pd
-import pickle
-import shap
 import matplotlib.pyplot as plt
+import seaborn as sns
+import shap
 
-# ----------------------------
+from src.predict import predict, explainer
 
-# Load Model & Encoders
+st.set_page_config(page_title="Churn Predictor", layout="wide")
 
-# ----------------------------
+# ---------------- HEADER ----------------
+st.markdown("<h1 style='text-align:center;'>📊 Customer Churn Prediction</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>ML + Explainable AI Dashboard</p>", unsafe_allow_html=True)
 
-with open("models/model.pkl", "rb") as f:
- model = pickle.load(f)
+st.divider()
 
-with open("models/encoders.pkl", "rb") as f:
- encoders = pickle.load(f)
+# ---------------- LOAD DATA ----------------
+df = pd.read_csv("data/churn.csv")
 
-# ----------------------------
+# ---------------- EDA SECTION ----------------
+st.subheader("📊 Data Insights")
 
-# UI
+col1, col2 = st.columns(2)
 
-# ----------------------------
+with col1:
+    fig, ax = plt.subplots(figsize=(4,3))
+    sns.countplot(x='Churn', data=df, ax=ax)
+    plt.tight_layout()
+    st.pyplot(fig)
 
-st.title("📊 Customer Churn Prediction")
-st.write("Enter customer details to predict churn.")
+with col2:
+    fig, ax = plt.subplots(figsize=(4,3))
+    sns.boxplot(x='Churn', y='MonthlyCharges', data=df, ax=ax)
+    plt.tight_layout()
+    st.pyplot(fig)
 
-# ----------------------------
+st.divider()
 
-# Inputs
+# ---------------- INPUT FORM ----------------
+st.subheader("🧾 Enter Customer Details")
 
-# ----------------------------
+col1, col2 = st.columns(2)
 
-gender = st.selectbox("Gender", ["Female", "Male"])
-SeniorCitizen = st.selectbox("Senior Citizen", [0, 1])
-Partner = st.selectbox("Partner", ["Yes", "No"])
-Dependents = st.selectbox("Dependents", ["Yes", "No"])
-tenure = st.slider("Tenure (months)", 0, 72, 12)
+with col1:
+    gender = st.selectbox("Gender", ["Male", "Female"])
+    senior = st.selectbox("Senior Citizen", [0, 1])
+    partner = st.selectbox("Partner", ["Yes", "No"])
+    dependents = st.selectbox("Dependents", ["Yes", "No"])
+    tenure = st.slider("Tenure (months)", 0, 72)
 
-PhoneService = st.selectbox("Phone Service", ["Yes", "No"])
-MultipleLines = st.selectbox("Multiple Lines", ["Yes", "No", "No phone service"])
-InternetService = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
+with col2:
+    phone = st.selectbox("Phone Service", ["Yes", "No"])
+    multiple = st.selectbox("Multiple Lines", ["Yes", "No", "No phone service"])
+    internet = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
+    online_sec = st.selectbox("Online Security", ["Yes", "No", "No internet service"])
+    online_backup = st.selectbox("Online Backup", ["Yes", "No", "No internet service"])
+    device = st.selectbox("Device Protection", ["Yes", "No", "No internet service"])
+    tech = st.selectbox("Tech Support", ["Yes", "No", "No internet service"])
+    tv = st.selectbox("Streaming TV", ["Yes", "No", "No internet service"])
+    movies = st.selectbox("Streaming Movies", ["Yes", "No", "No internet service"])
 
-OnlineSecurity = st.selectbox("Online Security", ["Yes", "No", "No internet service"])
-OnlineBackup = st.selectbox("Online Backup", ["Yes", "No", "No internet service"])
-DeviceProtection = st.selectbox("Device Protection", ["Yes", "No", "No internet service"])
-TechSupport = st.selectbox("Tech Support", ["Yes", "No", "No internet service"])
+st.divider()
 
-StreamingTV = st.selectbox("Streaming TV", ["Yes", "No", "No internet service"])
-StreamingMovies = st.selectbox("Streaming Movies", ["Yes", "No", "No internet service"])
+col3, col4 = st.columns(2)
 
-Contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
-PaperlessBilling = st.selectbox("Paperless Billing", ["Yes", "No"])
-PaymentMethod = st.selectbox(
-"Payment Method",
-[
-"Electronic check",
-"Mailed check",
-"Bank transfer (automatic)",
-"Credit card (automatic)"
-]
-)
+with col3:
+    contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+    paperless = st.selectbox("Paperless Billing", ["Yes", "No"])
+    payment = st.selectbox("Payment Method", [
+        "Electronic check", "Mailed check",
+        "Bank transfer (automatic)", "Credit card (automatic)"
+    ])
 
-MonthlyCharges = st.number_input("Monthly Charges", min_value=0.0)
-TotalCharges = st.number_input("Total Charges", min_value=0.0)
+with col4:
+    monthly = st.number_input("Monthly Charges", 0.0)
+    total = st.number_input("Total Charges", 0.0)
 
-# ----------------------------
+# ---------------- VALIDATION ----------------
+expected_total = tenure * monthly
 
-# Prediction
+st.info(f"💡 Expected Total Charges ≈ {expected_total:.2f}")
 
-# ----------------------------
+is_valid = True
+if abs(total - expected_total) > 100:
+    st.warning("⚠️ Total Charges seems inconsistent with Tenure × Monthly Charges")
+    is_valid = False
 
-if st.button("Predict"):
+st.divider()
 
+# ---------------- PREDICTION ----------------
+if st.button("🔍 Predict Churn", use_container_width=True) and is_valid:
 
- input_data = pd.DataFrame([{
-    "gender": gender,
-    "SeniorCitizen": SeniorCitizen,
-    "Partner": Partner,
-    "Dependents": Dependents,
-    "tenure": tenure,
-    "PhoneService": PhoneService,
-    "MultipleLines": MultipleLines,
-    "InternetService": InternetService,
-    "OnlineSecurity": OnlineSecurity,
-    "OnlineBackup": OnlineBackup,
-    "DeviceProtection": DeviceProtection,
-    "TechSupport": TechSupport,
-    "StreamingTV": StreamingTV,
-    "StreamingMovies": StreamingMovies,
-    "Contract": Contract,
-    "PaperlessBilling": PaperlessBilling,
-    "PaymentMethod": PaymentMethod,
-    "MonthlyCharges": MonthlyCharges,
-    "TotalCharges": TotalCharges
-}])
+    input_data = {
+        "gender": gender,
+        "SeniorCitizen": senior,
+        "Partner": partner,
+        "Dependents": dependents,
+        "tenure": tenure,
+        "PhoneService": phone,
+        "MultipleLines": multiple,
+        "InternetService": internet,
+        "OnlineSecurity": online_sec,
+        "OnlineBackup": online_backup,
+        "DeviceProtection": device,
+        "TechSupport": tech,
+        "StreamingTV": tv,
+        "StreamingMovies": movies,
+        "Contract": contract,
+        "PaperlessBilling": paperless,
+        "PaymentMethod": payment,
+        "MonthlyCharges": monthly,
+        "TotalCharges": total
+    }
 
-# Encode categorical columns
-for col in encoders:
-    input_data[col] = encoders[col].transform(input_data[col])
+    pred, prob, shap_values, df_input = predict(input_data)
 
-# Prediction
-prediction = model.predict(input_data)[0]
-probability = model.predict_proba(input_data)[0][1]
+    st.subheader("📈 Prediction Result")
 
-st.subheader("Prediction Result")
+    st.progress(float(prob))
 
-if prediction == 1:
-    st.error(f"Customer is likely to churn 😟 (Probability: {probability:.2f})")
-else:
-    st.success(f"Customer is not likely to churn 😊 (Probability: {probability:.2f})")
+    if pred == 1:
+        st.error(f"⚠️ High Churn Risk ({prob:.2f})")
+    else:
+        st.success(f"✅ Customer Likely to Stay ({prob:.2f})")
 
-# ----------------------------
-# SHAP Explainability
-# ----------------------------
+    # ---------------- SHAP ----------------
+    # ---------------- SHAP ----------------
+    # ---------------- SHAP ----------------
 st.subheader("🔍 Why this prediction? (SHAP Explainability)")
 
-explainer = shap.Explainer(model)
-shap_values = explainer(input_data)
-
 fig, ax = plt.subplots()
-shap.plots.waterfall(shap_values[0], show=False)
+
+shap_exp = shap.Explanation(
+    values=shap_values[0],              # SHAP values
+    base_values=explainer.expected_value,
+    data=df_input.iloc[0],
+    feature_names=df_input.columns.tolist()
+)
+
+shap.plots.waterfall(shap_exp, show=False)
+
 st.pyplot(fig)
+
+    
+
+    
+      
+
+    
+
+# python -m streamlit run app.py
